@@ -135,8 +135,8 @@ function getNotice() {
           { data: 'id.S' },
           { data: 'title.S' },
           { data: 'context.S' },
-          { data: 'createdAt.S' },
-          { data: 'updatedAt.S' },
+          { data: 'createdAt.N' },
+          { data: 'updatedAt.N' },
           { data: null }
         ],
         columnDefs: [
@@ -179,7 +179,7 @@ function addNotice() {
 
   var title = $('#title').val();
   var context = $('#context').val();
-  var time = Date.now();
+  var time = Date.now().toString();
 
   var params = {
     TableName: 'noticeTable',
