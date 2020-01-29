@@ -68,32 +68,6 @@ $(function() {
   });
 });
 
-function setAdmin(uid, isAdmin) {
-  if (
-    isAdmin == true ||
-    isAdmin == false ||
-    isAdmin == 'true' ||
-    isAdmin == 'false'
-  ) {
-    Kakao.API.request({
-      url: '/v1/user/update_profile',
-      data: {
-        properties: {
-          admin: isAdmin
-        }
-      },
-      success: function(res) {
-        console.log(JSON.stringify(res));
-      },
-      fail: function(error) {
-        console.log(JSON.stringify(error));
-      }
-    });
-  } else {
-    console.log("setAdmin's isAdmin is invalid", isAdmin);
-  }
-}
-
 function getUserInfo() {
   console.log('getUserInfo() called');
 
