@@ -179,7 +179,7 @@ function addNotice() {
 
   var title = $('#title').val();
   var context = $('#context').val();
-  var time = new Date().toISOString();
+  var time = Date.now();
 
   var params = {
     TableName: 'noticeTable',

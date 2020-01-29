@@ -2,7 +2,7 @@
   "_args": [
     [
       "@fortawesome/fontawesome-free@5.10.2",
-      "c:\\Workspace\\Project\\startbootstrap-sb-admin-2-gh-pages"
+      "C:\\Users\\Hightech\\Desktop\\test\\PhotoMap_Admin"
     ]
   ],
   "_from": "@fortawesome/fontawesome-free@5.10.2",
@@ -27,7 +27,7 @@
   ],
   "_resolved": "https://registry.npmjs.org/@fortawesome/fontawesome-free/-/fontawesome-free-5.10.2.tgz",
   "_spec": "5.10.2",
-  "_where": "c:\\Workspace\\Project\\startbootstrap-sb-admin-2-gh-pages",
+  "_where": "C:\\Users\\Hightech\\Desktop\\test\\PhotoMap_Admin",
   "author": {
     "name": "Dave Gandy",
     "email": "dave@fontawesome.com",
