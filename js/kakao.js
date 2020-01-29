@@ -194,10 +194,10 @@ function addNotice() {
         S: context
       },
       createdAt: {
-        S: time
+        N: time
       },
       updatedAt: {
-        S: time
+        N: time
       }
     }
   };
