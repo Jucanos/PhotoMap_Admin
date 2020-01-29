@@ -103,24 +103,27 @@ function getNotice() {
       console.log('Error', err);
     } else {
       console.log(data.Items);
-      var table = $('#noticeTable').DataTable({
-        data: data.Items,
-        columns: [
-          { data: 'id.S' },
-          { data: 'title.S' },
-          { data: 'context.S' },
-          { data: 'createdAt.N' },
-          { data: 'updatedAt.N' },
-          { data: null }
-        ],
-        columnDefs: [
-          {
-            targets: -1,
-            data: null,
-            defaultContent: '<button class="text-danger">X</button>'
-          }
-        ]
-      });
+      var table = $('#noticeTable')
+        .DataTable({
+          data: data.Items,
+          columns: [
+            { data: 'id.S' },
+            { data: 'title.S' },
+            { data: 'context.S' },
+            { data: 'createdAt.N' },
+            { data: 'updatedAt.N' },
+            { data: null }
+          ],
+          columnDefs: [
+            {
+              targets: -1,
+              data: null,
+              defaultContent: '<button class="text-danger">X</button>'
+            }
+          ]
+        })
+        .order([3, 'desc'])
+        .draw();
 
       $('#noticeTable tbody').on('click', 'button', function() {
         var row = table.row($(this).parents('tr'));
@@ -176,11 +179,19 @@ function addNotice() {
     }
   };
 
+  $('#title').val('');
+  $('#context').val('');
+
   ddb.putItem(params, function(err, data) {
     if (err) {
       console.log('Error', err);
     } else {
       console.log(data);
+      $('#noticeTable')
+        .DataTable()
+        .row.add(params.Item)
+        .order([3, 'desc'])
+        .draw();
     }
   });
 }
