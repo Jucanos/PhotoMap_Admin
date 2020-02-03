@@ -4,9 +4,33 @@ Kakao.init('7600a0cf289a958df5021746c9222d59');
 // Amazon Cognito 인증 공급자를 초기화합니다
 AWS.config.region = 'ap-northeast-2'; // 리전
 AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-  IdentityPoolId: 'ap-northeast-2:9293a76a-bac4-4910-9e12-d72bde2351ed'
+  IdentityPoolId: 'ap-northeast-2:181ba321-7a7e-486d-9f43-3ac178405757',
+  RoleArn:
+    'arn:aws:iam::383760702031:role/Cognito_photoMapAdminCognitoUnauth_Role'
 });
 var ddb = new AWS.DynamoDB();
+
+var athena = new AWS.Athena();
+var date = new Date();
+
+function partition(year, month, day) {
+  if (day) {
+    return 'year=' + year + ' and month=' + month + ' and day=' + day;
+  } else if (month) {
+    return 'year=' + year + ' and month=' + month;
+  } else if (year) {
+    return 'year=' + year;
+  } else {
+    return (
+      'year=' +
+      date.getUTCFullYear().toString() +
+      ' and month=' +
+      (date.getUTCMonth() + 1).toString() +
+      ' and day=' +
+      date.getUTCDate().toString()
+    );
+  }
+}
 
 var tableName = 'dev-photoMapTable';
 var me;
@@ -42,6 +66,7 @@ function createLoginButton() {
   });
 }
 
+// 로그인 확인
 $(function() {
   Kakao.Auth.getStatusInfo(function(statusObj) {
     console.log(statusObj);
@@ -59,7 +84,6 @@ $(function() {
           'src',
           me.kakao_account.profile.thumbnail_image_url
         );
-        getUserInfo();
       }
     } else {
       alert('로그인이 필요합니다.');
@@ -67,6 +91,131 @@ $(function() {
     }
   });
 });
+
+function getCardNumber() {
+  console.log('getCardNumber() called');
+
+  var params = {
+    TableName: 'queryTable',
+    ExpressionAttributeValues: {
+      ':name': { S: 'cardNumber' }
+    },
+    KeyConditionExpression: 'queryName = :name'
+  };
+
+  ddb.query(params, function(err, data) {
+    if (err) {
+      console.log('Error', err);
+    } else {
+      console.log(data.Items[0].id.S);
+      getStatus(data.Items[0].id.S, setCardNumber);
+    }
+  });
+}
+
+function getCardNumber_Athena() {
+  console.log('getCardNumber_Athena() called');
+
+  var params = {
+    QueryExecutionContext: {
+      Database: 'photomap_dev_athena'
+    },
+    QueryString:
+      "SELECT 'user' AS name, COUNT(uid) AS count FROM users WHERE " +
+      partition() +
+      " UNION SELECT 'map', COUNT(mid) FROM maps WHERE " +
+      partition() +
+      " UNION SELECT 'story', COUNT(sid) FROM stories WHERE " +
+      partition() +
+      " UNION SELECT 'log', COUNT(lid) FROM logs WHERE " +
+      partition(),
+    ResultConfiguration: {
+      OutputLocation: 's3://aws-glue-photomap-dev/result'
+    }
+  };
+  console.log(params.QueryString);
+
+  athena.startQueryExecution(params, function(err, data) {
+    if (err) {
+      console.log(err, err.stack);
+    } else {
+      console.log(data);
+      getStatus(data.QueryExecutionId, setCardNumber);
+    }
+  });
+}
+
+function setCardNumber(data) {
+  var rows = data.ResultSet.Rows;
+  console.log(data);
+  console.log(rows);
+
+  for (var i = 1; i < rows.length; i++) {
+    $('#' + get(rows[i], 0) + 'Number').text(get(rows[i], 1));
+  }
+}
+
+function get(row, idx, type) {
+  if (type) {
+    return row.Data[idx][type];
+  } else if (idx) {
+    return row.Data[idx].VarCharValue;
+  } else {
+    return row.Data[0].VarCharValue;
+  }
+}
+
+function getStatus(id, callback) {
+  console.log('getStatus() called');
+
+  var params = {
+    QueryExecutionId: id
+  };
+
+  athena.getQueryExecution(params, function(err, data) {
+    if (err) {
+      console.log(err, err.stack);
+    } else {
+      console.log(data);
+      var state = data.QueryExecution.Status.State;
+      console.log(state);
+
+      switch (state) {
+        case 'QUEUED':
+        case 'RUNNING':
+          setTimeout(getStatus, 1000, id, callback);
+          break;
+        case 'SUCCEEDED':
+          getResult(id, callback);
+          break;
+        default:
+          break;
+      }
+    }
+  });
+}
+
+function getResult(id, callback) {
+  console.log('getResult() called');
+
+  var params = {
+    QueryExecutionId: id
+  };
+
+  athena.getQueryResults(params, function(err, data) {
+    if (err) {
+      console.log(err, err.stack);
+    } else {
+      console.log(data);
+      console.log(data.ResultSet.Rows);
+
+      if (callback) {
+        console.log('callback called');
+        callback(data);
+      }
+    }
+  });
+}
 
 function getUserInfo() {
   console.log('getUserInfo() called');
