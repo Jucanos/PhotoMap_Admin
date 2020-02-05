@@ -8,11 +8,13 @@ AWS.config.credentials = new AWS.CognitoIdentityCredentials({
   RoleArn:
     'arn:aws:iam::383760702031:role/Cognito_photoMapAdminCognitoUnauth_Role'
 });
-var ddb = new AWS.DynamoDB();
 
+// AWS 자원을 가져온다
+var ddb = new AWS.DynamoDB();
 var athena = new AWS.Athena();
 var date = new Date();
 
+// Athena의 쿼리옵션
 function partition(year, month, day) {
   if (day) {
     return 'year=' + year + ' and month=' + month + ' and day=' + day;
@@ -95,6 +97,8 @@ $(function() {
 function getCardNumber() {
   console.log('getCardNumber() called');
 
+  $('#standard').text(date.toLocaleDateString());
+
   var params = {
     TableName: 'queryTable',
     ExpressionAttributeValues: {
@@ -113,38 +117,6 @@ function getCardNumber() {
   });
 }
 
-function getCardNumber_Athena() {
-  console.log('getCardNumber_Athena() called');
-
-  var params = {
-    QueryExecutionContext: {
-      Database: 'photomap_dev_athena'
-    },
-    QueryString:
-      "SELECT 'user' AS name, COUNT(uid) AS count FROM users WHERE " +
-      partition() +
-      " UNION SELECT 'map', COUNT(mid) FROM maps WHERE " +
-      partition() +
-      " UNION SELECT 'story', COUNT(sid) FROM stories WHERE " +
-      partition() +
-      " UNION SELECT 'log', COUNT(lid) FROM logs WHERE " +
-      partition(),
-    ResultConfiguration: {
-      OutputLocation: 's3://aws-glue-photomap-dev/result'
-    }
-  };
-  console.log(params.QueryString);
-
-  athena.startQueryExecution(params, function(err, data) {
-    if (err) {
-      console.log(err, err.stack);
-    } else {
-      console.log(data);
-      getStatus(data.QueryExecutionId, setCardNumber);
-    }
-  });
-}
-
 function setCardNumber(data) {
   var rows = data.ResultSet.Rows;
   console.log(data);
@@ -153,6 +125,133 @@ function setCardNumber(data) {
   for (var i = 1; i < rows.length; i++) {
     $('#' + get(rows[i], 0) + 'Number').text(get(rows[i], 1));
   }
+}
+
+function getUserChart() {
+  console.log('getUserChart() called');
+
+  var params = {
+    TableName: 'queryTable',
+    ExpressionAttributeValues: {
+      ':name': { S: 'userChart' }
+    },
+    KeyConditionExpression: 'queryName = :name'
+  };
+
+  ddb.query(params, function(err, data) {
+    if (err) {
+      console.log('Error', err);
+    } else {
+      console.log(data.Items[0].id.S);
+      getStatus(data.Items[0].id.S, setUserChart);
+    }
+  });
+}
+
+function setUserChart(data) {
+  var rows = data.ResultSet.Rows;
+  var ctx = document.getElementById('UserChart');
+
+  var myLabel = [];
+  var myData = [];
+  for (var i = 1; i < rows.length; i++) {
+    myLabel.push(
+      get(rows[i], 1) + '.' + get(rows[i], 2) + '.' + get(rows[i], 3)
+    );
+    myData.push(Number(get(rows[i], 0)));
+  }
+
+  var myChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: myLabel,
+      datasets: [
+        {
+          label: '유저수',
+          lineTension: 0.3,
+          backgroundColor: 'rgba(78, 115, 223, 0.05)',
+          borderColor: 'rgba(78, 115, 223, 1)',
+          pointRadius: 3,
+          pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+          pointBorderColor: 'rgba(78, 115, 223, 1)',
+          pointHoverRadius: 3,
+          pointHoverBackgroundColor: 'rgba(78, 115, 223, 1)',
+          pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+          pointHitRadius: 10,
+          pointBorderWidth: 2,
+          data: myData
+        }
+      ]
+    },
+    options: {
+      maintainAspectRatio: false,
+      layout: {
+        padding: {
+          left: 10,
+          right: 25,
+          top: 25,
+          bottom: 0
+        }
+      },
+      scales: {
+        xAxes: [
+          {
+            time: {
+              unit: 'date'
+            },
+            gridLines: {
+              display: false,
+              drawBorder: false
+            },
+            ticks: {
+              maxTicksLimit: 7
+            }
+          }
+        ],
+        yAxes: [
+          {
+            ticks: {
+              beginAtZero: true,
+              maxTicksLimit: 10,
+              padding: 10
+            },
+            gridLines: {
+              color: 'rgb(234, 236, 244)',
+              zeroLineColor: 'rgb(234, 236, 244)',
+              drawBorder: false,
+              borderDash: [2],
+              zeroLineBorderDash: [2]
+            }
+          }
+        ]
+      },
+      legend: {
+        display: false
+      },
+      tooltips: {
+        backgroundColor: 'rgb(255,255,255)',
+        bodyFontColor: '#858796',
+        titleMarginBottom: 10,
+        titleFontColor: '#6e707e',
+        titleFontSize: 14,
+        borderColor: '#dddfeb',
+        borderWidth: 1,
+        xPadding: 15,
+        yPadding: 15,
+        displayColors: false,
+        intersect: false,
+        mode: 'index',
+        caretPadding: 10,
+        callbacks: {
+          label: function(tooltipItem, chart) {
+            var datasetLabel =
+              chart.datasets[tooltipItem.datasetIndex].label || '';
+            return datasetLabel + ': ' + tooltipItem.yLabel;
+          }
+        }
+      }
+    }
+  });
 }
 
 function get(row, idx, type) {
