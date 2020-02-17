@@ -94,15 +94,23 @@ $(function() {
   });
 });
 
-function getCardNumber() {
-  console.log('getCardNumber() called');
+/* 공용 */
+// Athena 쿼리 가져오기
+/*
+  cardNumber, setCardNumber
+  userChart, setUserChart
+*/
+function getQuery(queryName, callback) {
+  console.log(queryName + '() called');
 
-  $('#standard').text(date.toLocaleDateString());
+  if (queryName === 'cardNumber') {
+    $('#standard').text(date.toLocaleDateString());
+  }
 
   var params = {
     TableName: 'queryTable',
     ExpressionAttributeValues: {
-      ':name': { S: 'cardNumber' }
+      ':name': { S: queryName }
     },
     KeyConditionExpression: 'queryName = :name'
   };
@@ -112,42 +120,131 @@ function getCardNumber() {
       console.log('Error', err);
     } else {
       console.log(data.Items[0].id.S);
-      getStatus(data.Items[0].id.S, setCardNumber);
+      getStatus(data.Items[0].id.S, callback);
     }
   });
 }
 
+// Row에서 값을 뽑아낸다.
+function get(row, idx, type) {
+  if (type) {
+    return row.Data[idx][type];
+  } else if (idx) {
+    return row.Data[idx].VarCharValue;
+  } else {
+    return row.Data[0].VarCharValue;
+  }
+}
+
+// query의 상태를 보고 Success일떄까지 대기한다.
+function getStatus(id, callback) {
+  console.log('getStatus() called');
+
+  var params = {
+    QueryExecutionId: id
+  };
+
+  athena.getQueryExecution(params, function(err, data) {
+    if (err) {
+      console.log(err, err.stack);
+    } else {
+      console.log(data);
+      var state = data.QueryExecution.Status.State;
+      console.log(state);
+
+      switch (state) {
+        case 'QUEUED':
+        case 'RUNNING':
+          setTimeout(getStatus, 1000, id, callback);
+          break;
+        case 'SUCCEEDED':
+          getResult(id, callback);
+          break;
+        default:
+          break;
+      }
+    }
+  });
+}
+
+// query의 결과를 가져온다.
+function getResult(id, callback) {
+  console.log('getResult() called');
+
+  var params = {
+    QueryExecutionId: id
+  };
+
+  athena.getQueryResults(params, function(err, data) {
+    if (err) {
+      console.log(err, err.stack);
+    } else {
+      console.log(data);
+      console.log(data.ResultSet.Rows);
+
+      if (callback) {
+        console.log('callback called');
+        callback(data);
+      }
+    }
+  });
+}
+
+// 로그인한 유저 정보 가져오기
+function getUserInfo() {
+  console.log('getUserInfo() called');
+
+  var params = {
+    TableName: tableName,
+    IndexName: 'GSI',
+    ExpressionAttributeValues: {
+      ':info': { S: 'INFO' },
+      ':user': { S: 'USER' }
+    },
+    KeyConditionExpression: 'SK = :info and types = :user'
+  };
+
+  ddb.query(params, function(err, data) {
+    if (err) {
+      console.log('Error', err);
+    } else {
+      users = data.Items;
+      $('#userNumber').text(users.length);
+    }
+  });
+}
+
+// 로그아웃
+function logout() {
+  Kakao.Auth.logout();
+  window.location.replace('/login.html');
+}
+
+function uuid4() {
+  // UUID v4 generator in JavaScript (RFC4122 compliant)
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = (Math.random() * 16) | 0,
+      v = c == 'x' ? r : (r & 3) | 8;
+    return v.toString(16);
+  });
+}
+
+function uuid() {
+  var tokens = uuid4().split('-');
+  return tokens[2] + tokens[1] + tokens[0] + tokens[3] + tokens[4];
+}
+
+/* index.html */
+// 콜백: cardNumber 설정
 function setCardNumber(data) {
   var rows = data.ResultSet.Rows;
-  console.log(data);
-  console.log(rows);
 
   for (var i = 1; i < rows.length; i++) {
     $('#' + get(rows[i], 0) + 'Number').text(get(rows[i], 1));
   }
 }
 
-function getUserChart() {
-  console.log('getUserChart() called');
-
-  var params = {
-    TableName: 'queryTable',
-    ExpressionAttributeValues: {
-      ':name': { S: 'userChart' }
-    },
-    KeyConditionExpression: 'queryName = :name'
-  };
-
-  ddb.query(params, function(err, data) {
-    if (err) {
-      console.log('Error', err);
-    } else {
-      console.log(data.Items[0].id.S);
-      getStatus(data.Items[0].id.S, setUserChart);
-    }
-  });
-}
-
+// 콜백: userChart 설정
 function setUserChart(data) {
   var rows = data.ResultSet.Rows;
   var ctx = document.getElementById('UserChart');
@@ -254,91 +351,56 @@ function setUserChart(data) {
   });
 }
 
-function get(row, idx, type) {
-  if (type) {
-    return row.Data[idx][type];
-  } else if (idx) {
-    return row.Data[idx].VarCharValue;
-  } else {
-    return row.Data[0].VarCharValue;
+/* table-*.html */
+function setDataTable(data) {
+  console.log('setDataTable() called');
+
+  var rows = data.ResultSet.Rows;
+  console.log(rows);
+
+  var cols = rows[0].Data.length;
+  console.log(cols);
+
+  var title = '';
+  var columns = [];
+  for (var i = 0; i < cols - 3; i++) {
+    columns.push({ data: 'Data.' + i + '.VarCharValue' });
+    title += '<th>' + get(rows[0], i) + '</th>';
   }
+  console.log(columns);
+
+  $('#dataTable').append(
+    '<thead>\
+    <tr>\
+    ' +
+      title +
+      '\
+    </tr>\
+  </thead>\
+  <tfoot>\
+    <tr>\
+    ' +
+      title +
+      '\
+    </tr>\
+  </tfoot>'
+  );
+
+  rows.splice(0, 1);
+
+  var table = $('#dataTable')
+    .DataTable({
+      data: rows,
+      columns: columns
+    })
+    .order([cols - 5, 'desc'])
+    .draw();
+
+  console.log(table);
 }
 
-function getStatus(id, callback) {
-  console.log('getStatus() called');
-
-  var params = {
-    QueryExecutionId: id
-  };
-
-  athena.getQueryExecution(params, function(err, data) {
-    if (err) {
-      console.log(err, err.stack);
-    } else {
-      console.log(data);
-      var state = data.QueryExecution.Status.State;
-      console.log(state);
-
-      switch (state) {
-        case 'QUEUED':
-        case 'RUNNING':
-          setTimeout(getStatus, 1000, id, callback);
-          break;
-        case 'SUCCEEDED':
-          getResult(id, callback);
-          break;
-        default:
-          break;
-      }
-    }
-  });
-}
-
-function getResult(id, callback) {
-  console.log('getResult() called');
-
-  var params = {
-    QueryExecutionId: id
-  };
-
-  athena.getQueryResults(params, function(err, data) {
-    if (err) {
-      console.log(err, err.stack);
-    } else {
-      console.log(data);
-      console.log(data.ResultSet.Rows);
-
-      if (callback) {
-        console.log('callback called');
-        callback(data);
-      }
-    }
-  });
-}
-
-function getUserInfo() {
-  console.log('getUserInfo() called');
-
-  var params = {
-    TableName: tableName,
-    IndexName: 'GSI',
-    ExpressionAttributeValues: {
-      ':info': { S: 'INFO' },
-      ':user': { S: 'USER' }
-    },
-    KeyConditionExpression: 'SK = :info and types = :user'
-  };
-
-  ddb.query(params, function(err, data) {
-    if (err) {
-      console.log('Error', err);
-    } else {
-      users = data.Items;
-      $('#userNumber').text(users.length);
-    }
-  });
-}
-
+/* notice.html */
+// 공지사항 가져오기
 function getNotice() {
   console.log('getNotice() called');
 
@@ -399,6 +461,7 @@ function getNotice() {
   });
 }
 
+// 공지사항 추가하기
 function addNotice() {
   console.log('addNotice() called');
 
@@ -442,23 +505,4 @@ function addNotice() {
         .draw();
     }
   });
-}
-
-function logout() {
-  Kakao.Auth.logout();
-  window.location.replace('/login.html');
-}
-
-function uuid4() {
-  // UUID v4 generator in JavaScript (RFC4122 compliant)
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    var r = (Math.random() * 16) | 0,
-      v = c == 'x' ? r : (r & 3) | 8;
-    return v.toString(16);
-  });
-}
-
-function uuid() {
-  var tokens = uuid4().split('-');
-  return tokens[2] + tokens[1] + tokens[0] + tokens[3] + tokens[4];
 }

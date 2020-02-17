@@ -10,7 +10,7 @@
     <meta name="description" content="" />
     <meta name="author" content="" />
 
-    <title>PhotoMap Admin - Notice</title>
+    <title>PhotoMap Admin - Story Table</title>
 
     <!-- Custom fonts for this template-->
     <link
@@ -237,7 +237,7 @@
           <!-- Begin Page Content -->
           <div class="container-fluid">
             <!-- Page Heading -->
-            <h1 class="h3 mb-4 text-gray-800">공지사항</h1>
+            <h1 class="h3 mb-4 text-gray-800">스토리</h1>
 
             <div class="row">
               <div class="col-lg-12">
@@ -253,7 +253,7 @@
                     aria-controls="collapseCardNoticeList"
                   >
                     <h6 class="m-0 font-weight-bold text-primary">
-                      공지사항 목록
+                      스토리 목록
                     </h6>
                   </a>
                   <!-- Card Content - Collapse -->
@@ -263,81 +263,17 @@
                         <div class="table-responsive">
                           <table
                             class="table table-bordered"
-                            id="noticeTable"
+                            id="dataTable"
                             width="100%"
                             cellspacing="0"
-                          >
-                            <thead>
-                              <tr>
-                                <th>Id</th>
-                                <th>Title</th>
-                                <th>Context</th>
-                                <th>CreatedAt</th>
-                                <th>UpdatedAt</th>
-                                <th class="text-danger">Remove</th>
-                              </tr>
-                            </thead>
-                            <tfoot>
-                              <tr>
-                                <th>Id</th>
-                                <th>Title</th>
-                                <th>Context</th>
-                                <th>CreatedAt</th>
-                                <th>UpdatedAt</th>
-                                <th class="text-danger">Remove</th>
-                              </tr>
-                            </tfoot>
-                          </table>
+                          ></table>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <!-- Brand Buttons -->
-                <div class="card shadow mb-4">
-                  <!-- Card Header - Accordion -->
-                  <a
-                    href="#collapseCardNoticeAdd"
-                    class="d-block card-header py-3"
-                    data-toggle="collapse"
-                    role="button"
-                    aria-expanded="true"
-                    aria-controls="collapseCardNoticeAdd"
-                  >
-                    <h6 class="m-0 font-weight-bold text-primary">
-                      공지사항 추가
-                    </h6>
-                  </a>
-                  <!-- Card Content - Collapse -->
-                  <div class="collapse show" id="collapseCardNoticeAdd">
-                    <div class="card-body">
-                      <form action="javascript: addNotice()" id="addForm">
-                        <div class="form-group">
-                          <label for="title">제목</label>
-                          <input
-                            type="text"
-                            class="form-control"
-                            id="title"
-                            placeholder="제목"
-                          />
-                        </div>
-                        <div class="form-group">
-                          <label for="context">본문</label>
-                          <textarea
-                            class="form-control"
-                            id="context"
-                            rows="10"
-                            placeholder="본문"
-                          ></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary">
-                          추가
-                        </button>
-                      </form>
-                    </div>
-                  </div>
-                </div>
+                <!-- Another.. -->
               </div>
             </div>
           </div>
@@ -420,7 +356,9 @@
     <!-- Custom Kakao Library-->
     <script src="js/kakao.min.js"></script>
     <script>
-      getNotice();
+      $(document).ready(function() {
+        getQuery('storyTable', setDataTable);
+      });
     </script>
   </body>
 </html>
