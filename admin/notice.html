@@ -10,11 +10,11 @@
     <meta name="description" content="" />
     <meta name="author" content="" />
 
-    <title>PhotoMap Admin - User Table</title>
+    <title>PhotoMap Admin - Notice</title>
 
     <!-- Custom fonts for this template-->
     <link
-      href="vendor/fontawesome-free/css/all.min.css"
+      href="/vendor/fontawesome-free/css/all.min.css"
       rel="stylesheet"
       type="text/css"
     />
@@ -24,10 +24,10 @@
     />
 
     <!-- Custom styles for this template-->
-    <link href="css/sb-admin-2.min.css" rel="stylesheet" />
+    <link href="/css/sb-admin-2.min.css" rel="stylesheet" />
 
     <!-- AWS SDK -->
-    <script src="js/aws-sdk-2.610.0.min.js"></script>
+    <script src="/js/aws/aws-sdk-2.610.0.min.js"></script>
 
     <!-- Kakao Web Library-->
     <script src="//developers.kakao.com/sdk/js/kakao.min.js"></script>
@@ -237,7 +237,7 @@
           <!-- Begin Page Content -->
           <div class="container-fluid">
             <!-- Page Heading -->
-            <h1 class="h3 mb-4 text-gray-800">사용자</h1>
+            <h1 class="h3 mb-4 text-gray-800">공지사항</h1>
 
             <div class="row">
               <div class="col-lg-12">
@@ -253,7 +253,7 @@
                     aria-controls="collapseCardNoticeList"
                   >
                     <h6 class="m-0 font-weight-bold text-primary">
-                      사용자 목록
+                      공지사항 목록
                     </h6>
                   </a>
                   <!-- Card Content - Collapse -->
@@ -263,17 +263,81 @@
                         <div class="table-responsive">
                           <table
                             class="table table-bordered"
-                            id="dataTable"
+                            id="noticeTable"
                             width="100%"
                             cellspacing="0"
-                          ></table>
+                          >
+                            <thead>
+                              <tr>
+                                <th>Id</th>
+                                <th>Title</th>
+                                <th>Context</th>
+                                <th>CreatedAt</th>
+                                <th>UpdatedAt</th>
+                                <th class="text-danger">Remove</th>
+                              </tr>
+                            </thead>
+                            <tfoot>
+                              <tr>
+                                <th>Id</th>
+                                <th>Title</th>
+                                <th>Context</th>
+                                <th>CreatedAt</th>
+                                <th>UpdatedAt</th>
+                                <th class="text-danger">Remove</th>
+                              </tr>
+                            </tfoot>
+                          </table>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <!-- Another.. -->
+                <!-- Brand Buttons -->
+                <div class="card shadow mb-4">
+                  <!-- Card Header - Accordion -->
+                  <a
+                    href="#collapseCardNoticeAdd"
+                    class="d-block card-header py-3"
+                    data-toggle="collapse"
+                    role="button"
+                    aria-expanded="true"
+                    aria-controls="collapseCardNoticeAdd"
+                  >
+                    <h6 class="m-0 font-weight-bold text-primary">
+                      공지사항 추가
+                    </h6>
+                  </a>
+                  <!-- Card Content - Collapse -->
+                  <div class="collapse show" id="collapseCardNoticeAdd">
+                    <div class="card-body">
+                      <form action="javascript: addNotice()" id="addForm">
+                        <div class="form-group">
+                          <label for="title">제목</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="title"
+                            placeholder="제목"
+                          />
+                        </div>
+                        <div class="form-group">
+                          <label for="context">본문</label>
+                          <textarea
+                            class="form-control"
+                            id="context"
+                            rows="10"
+                            placeholder="본문"
+                          ></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                          추가
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -340,25 +404,23 @@
     </div>
 
     <!-- Bootstrap core JavaScript-->
-    <script src="vendor/jquery/jquery.min.js"></script>
-    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/vendor/jquery/jquery.min.js"></script>
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
     <!-- Core plugin JavaScript-->
-    <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+    <script src="/vendor/jquery-easing/jquery.easing.min.js"></script>
 
     <!-- Custom scripts for all pages-->
-    <script src="js/sb-admin-2.min.js"></script>
+    <script src="/js/sb-admin-2.min.js"></script>
 
     <!-- Page level plugins -->
-    <script src="vendor/datatables/jquery.dataTables.min.js"></script>
-    <script src="vendor/datatables/dataTables.bootstrap4.min.js"></script>
+    <script src="/vendor/datatables/jquery.dataTables.min.js"></script>
+    <script src="/vendor/datatables/dataTables.bootstrap4.min.js"></script>
 
     <!-- Custom Kakao Library-->
-    <script src="js/kakao.min.js"></script>
+    <script src="/js/kakao-admin.min.js"></script>
     <script>
-      $(document).ready(function() {
-        getQuery('userTable', setDataTable);
-      });
+      getNotice();
     </script>
   </body>
 </html>
