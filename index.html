@@ -34,6 +34,9 @@
 
     <!-- Kakao Web Library-->
     <script src="//developers.kakao.com/sdk/js/kakao.min.js"></script>
+
+    <!-- Canvas Drawing Library -->
+    <script src="https://unpkg.com/konva@4.1.5/konva.min.js"></script>
   </head>
 
   <body id="page-top">
@@ -79,16 +82,8 @@
           지도 목록
         </div>
 
-        <!-- Nav Item - Dashboard -->
-        <li class="nav-item active">
-          <a class="nav-link" href="index.html">
-            <i class="fas fa-fw fa-tachometer-alt"></i>
-            <span>지도 </span>
-          </a>
-        </li>
-
         <!-- Divider -->
-        <hr class="sidebar-divider d-none d-md-block" />
+        <hr id="divMapList" class="sidebar-divider d-none d-md-block" />
 
         <!-- Sidebar Toggler (Sidebar) -->
         <div class="text-center d-none d-md-inline">
@@ -202,10 +197,102 @@
           <!-- End of Topbar -->
 
           <!-- Begin Page Content -->
-          <div class="container-fluid">
-            <form action="javascript:request(API.UserGet)">
-              <input type="submit" value="확인" />
-            </form>
+          <div class="container-fluid h-75 text-center position-relative">
+            <div
+              id="stage-parent"
+              class="position-absolute m-auto border"
+              style="top:0; bottom:0; left:0; right:0; width: 60vmin; height: 60vmin;"
+            >
+              <div id="container"></div>
+            </div>
+            <script>
+              // let's think our stage virtual size will be 1000x1000px
+              // but the real size will be different to fit user's page
+              // so the stage will be 100% visible on any device
+              var stageWidth = 1000;
+              var stageHeight = 1000;
+
+              var stage = new Konva.Stage({
+                container: 'container',
+                width: stageWidth,
+                height: stageHeight,
+                draggable: true
+              });
+
+              var layer = new Konva.Layer();
+              stage.add(layer);
+
+              // add circle into center
+              var circle = new Konva.Circle({
+                radius: 50,
+                fill: 'red',
+                x: stage.width() / 2,
+                y: stage.height() / 2
+              });
+              layer.add(circle);
+
+              // rectangle in bottom right of the stage
+              var rect = new Konva.Rect({
+                fill: 'green',
+                x: stage.width() - 100,
+                y: stage.height() - 100,
+                width: 100,
+                height: 100
+              });
+              layer.add(rect);
+
+              function fitStageIntoParentContainer() {
+                var container = document.querySelector('#stage-parent');
+
+                // now we need to fit stage into parent
+                var containerWidth = container.offsetWidth;
+                // to do this we need to scale the stage
+                var scale = containerWidth / stageWidth;
+
+                stage.width(stageWidth * scale);
+                stage.height(stageHeight * scale);
+                stage.scale({ x: scale, y: scale });
+                stage.draw();
+              }
+
+              fitStageIntoParentContainer();
+              // adapt the stage on any window resize
+              window.addEventListener('resize', fitStageIntoParentContainer);
+
+              var scaleBy = 1.01;
+              stage.on('wheel', (e) => {
+                e.evt.preventDefault();
+                var oldScale = stage.scaleX();
+
+                var mousePointTo = {
+                  x:
+                    stage.getPointerPosition().x / oldScale -
+                    stage.x() / oldScale,
+                  y:
+                    stage.getPointerPosition().y / oldScale -
+                    stage.y() / oldScale
+                };
+
+                var newScale =
+                  e.evt.deltaY > 0 ? oldScale * scaleBy : oldScale / scaleBy;
+                stage.scale({ x: newScale, y: newScale });
+
+                var newPos = {
+                  x:
+                    -(
+                      mousePointTo.x -
+                      stage.getPointerPosition().x / newScale
+                    ) * newScale,
+                  y:
+                    -(
+                      mousePointTo.y -
+                      stage.getPointerPosition().y / newScale
+                    ) * newScale
+                };
+                stage.position(newPos);
+                stage.batchDraw();
+              });
+            </script>
           </div>
           <!-- /.container-fluid -->
         </div>
@@ -286,6 +373,10 @@
     <script src="/js/kakao.min.js"></script>
 
     <!-- Page script -->
-    <script></script>
+    <script>
+      $(document).ready(function() {
+        request(API.MapList, setMapList);
+      });
+    </script>
   </body>
 </html>
