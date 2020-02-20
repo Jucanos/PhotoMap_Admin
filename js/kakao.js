@@ -191,12 +191,18 @@ function showMap(data, textStatus, jqXHR) {
         paths[keys[i]].y(-997.914);
       }
 
-      paths[keys[i]].on('mousedown touchstart', function() {
+      paths[keys[i]].on('mousedown touchstart', function(e) {
+        // prevent default behavior
+        e.evt.preventDefault();
         console.log(this.id() + ' clicked');
-        request(
-          API.StoryList($('li.active').attr('id'), this.id()),
-          showStoryList
-        );
+        if (e.evt.which === 1) {
+          request(
+            API.StoryList($('li.active').attr('id'), this.id()),
+            showStoryList
+          );
+        } else if (e.evt.which === 3) {
+          console.log('path right');
+        }
       });
       paths[keys[i]].on('mouseenter', function() {
         stage.container().style.cursor = 'pointer';
@@ -246,6 +252,11 @@ function showStoryList(data, textStatus, jqXHR) {
   if (textStatus === 'success') {
     var arr = data.data;
     console.log(arr);
+
+    var storyObj = null;
+    for (var i = 0; i < arr.length; i++) {
+      storyObj = arr[i];
+    }
   }
 }
 
