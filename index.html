@@ -29,6 +29,36 @@
       rel="stylesheet"
     />
 
+    <style>
+      output {
+        position: absolute;
+        background-color: #999999;
+        width: 50px;
+        height: 30px;
+        text-align: center;
+        color: white;
+        border-radius: 10px;
+        display: none;
+        font: bold 15px/30px Georgia;
+        bottom: 175%;
+        left: 0;
+        margin-left: -1%;
+      }
+      output:after {
+        content: '';
+        position: absolute;
+        width: 0;
+        height: 0;
+        border-top: 10px solid #999999;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        margin-top: -1px;
+      }
+    </style>
+
     <!-- Custom styles for this template-->
     <link href="/css/sb-admin-2.min.css" rel="stylesheet" />
 
@@ -109,12 +139,13 @@
             </button>
 
             <!-- Topbar Navbar -->
-            <h1
+            <span
               id="mapName"
               class="font-weight-bold text-primary text-center w-100"
+              style="font-size: 3vh"
             >
               지도 이름
-            </h1>
+            </span>
 
             <!-- Topbar Navbar -->
             <ul class="navbar-nav ml-auto">
@@ -204,6 +235,26 @@
               style="top:0; bottom:0; left:0; right:0; width: 60vmin; height: 60vmin;"
             >
               <div id="container"></div>
+              <div class="row">
+                <div class="col-3 text-right">
+                  <label for="canvasScaler">Scale</label>
+                </div>
+                <div class="col-9">
+                  <input
+                    type="range"
+                    name="scaler"
+                    class="custom-range"
+                    id="canvasScaler"
+                    min="0.1"
+                    max="2"
+                    step="0.001"
+                  />
+                  <output
+                    for="scaler"
+                    onforminput="value = scaler.valueAsNumber"
+                  ></output>
+                </div>
+              </div>
             </div>
             <script>
               // let's think our stage virtual size will be 1000x1000px
@@ -222,24 +273,11 @@
               var layer = new Konva.Layer();
               stage.add(layer);
 
-              // add circle into center
-              var circle = new Konva.Circle({
-                radius: 50,
-                fill: 'red',
-                x: stage.width() / 2,
-                y: stage.height() / 2
-              });
-              layer.add(circle);
+              var layerStory = new Konva.Layer();
+              stage.add(layerStory);
 
-              // rectangle in bottom right of the stage
-              var rect = new Konva.Rect({
-                fill: 'green',
-                x: stage.width() - 100,
-                y: stage.height() - 100,
-                width: 100,
-                height: 100
-              });
-              layer.add(rect);
+              var layerUser = new Konva.Layer();
+              stage.add(layerUser);
 
               function fitStageIntoParentContainer() {
                 var container = document.querySelector('#stage-parent');
@@ -263,6 +301,13 @@
               stage.on('wheel', (e) => {
                 e.evt.preventDefault();
                 var oldScale = stage.scaleX();
+                if (oldScale > 2) {
+                  stage.scale({ x: 2, y: 2 });
+                  return;
+                } else if (oldScale < 0.1) {
+                  stage.scale({ x: 0.1, y: 0.1 });
+                  return;
+                }
 
                 var mousePointTo = {
                   x:
@@ -276,6 +321,7 @@
                 var newScale =
                   e.evt.deltaY > 0 ? oldScale * scaleBy : oldScale / scaleBy;
                 stage.scale({ x: newScale, y: newScale });
+                $('#canvasScaler').val(newScale);
 
                 var newPos = {
                   x:
@@ -376,6 +422,87 @@
     <script>
       $(document).ready(function() {
         request(API.MapList, setMapList);
+
+        // for cache
+        var el, newPoint, newPlace, offset;
+
+        $('#canvasScaler').val(stage.scaleX());
+        $('#canvasScaler')
+          .on('input', function() {
+            var scaleValue = $('#canvasScaler').val();
+
+            var oldScale = stage.scaleX();
+            var mousePointTo = {
+              x: stage.width() / 2 / oldScale - stage.x() / oldScale,
+              y: stage.height() / 2 / oldScale - stage.y() / oldScale
+            };
+            stage.scale({ x: scaleValue, y: scaleValue });
+
+            var newPos = {
+              x:
+                -(mousePointTo.x - stage.width() / 2 / scaleValue) * scaleValue,
+              y:
+                -(mousePointTo.y - stage.height() / 2 / scaleValue) * scaleValue
+            };
+            stage.position(newPos);
+            stage.batchDraw();
+
+            // Cache this for efficiency
+            el = $(this);
+
+            // Measure width of range input
+            width = el.width();
+
+            // Figure out placement percentage between left and right of input
+            newPoint =
+              (el.val() - el.attr('min')) / (el.attr('max') - el.attr('min'));
+            console.log(newPoint);
+            // Janky value to get pointer to line up better
+            offset = -1.7;
+
+            // Prevent bubble from going beyond left or right (unsupported browsers)
+            if (newPoint < 0) {
+              newPlace = 0;
+            } else if (newPoint > 1) {
+              newPlace = width;
+            } else {
+              newPlace = width * newPoint + offset;
+              offset -= newPoint;
+            }
+            var container = document.querySelector('#stage-parent');
+            var scale = container.offsetWidth / stageWidth;
+            console.log(scale);
+
+            // Move bubble
+            el.next('output')
+              .css({
+                left: newPlace,
+                marginLeft: offset + '%'
+              })
+              .text('x' + Math.round((el.val() / scale) * 10) / 10);
+          })
+          .trigger('input');
+
+        $('#canvasScaler').mouseover(function() {
+          el = $(this);
+
+          el.next('output').css({
+            display: 'inline-block'
+          });
+        });
+        $('#canvasScaler').mouseleave(function() {
+          el = $(this);
+
+          el.next('output').css({
+            display: 'none'
+          });
+        });
+
+        $('#canvasScaler')
+          .next('output')
+          .css({
+            display: 'none'
+          });
       });
     </script>
   </body>

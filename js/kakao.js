@@ -124,7 +124,9 @@ function setMapList(data, textStatus, jqXHR) {
     var arr = data.data;
     for (var i = 0; i < arr.length; i++) {
       $('#divMapList').before(
-        '<li class="nav-item">\
+        '<li class="nav-item" id="' +
+          arr[i].mid +
+          '">\
           <a class="nav-link" href="#" onclick="getMapInfo(this, \'' +
           arr[i].mid +
           '\')"; return false;">\
@@ -155,6 +157,96 @@ function getMapInfo(obj, mid) {
   );
 
   request(API.MapInfo(mid), showMap);
+}
+
+function showMap(data, textStatus, jqXHR) {
+  console.log('showMap()', data, textStatus, jqXHR);
+
+  if (textStatus === 'success') {
+    var arr = data.data;
+    console.log(arr);
+
+    var represents = arr.represents;
+    var keys = Object.keys(represents);
+    var images = [];
+    var paths = [];
+
+    layer.destroyChildren();
+
+    for (var i = 0; i < keys.length; i++) {
+      console.log(keys[i], represents[keys[i]]);
+
+      paths[keys[i]] = new Konva.Path({
+        stroke: 'black',
+        strokeWidth: 5,
+        shadowColor: 'black',
+        shadowBlur: 20,
+        shadowOpacity: 0.5,
+        data: representsSVG[keys[i]],
+        id: keys[i]
+      });
+
+      if (keys[i] === 'jeju') {
+        paths[keys[i]].x(-85.2888);
+        paths[keys[i]].y(-997.914);
+      }
+
+      paths[keys[i]].on('mousedown touchstart', function() {
+        console.log(this.id() + ' clicked');
+        request(
+          API.StoryList($('li.active').attr('id'), this.id()),
+          showStoryList
+        );
+      });
+      paths[keys[i]].on('mouseenter', function() {
+        stage.container().style.cursor = 'pointer';
+      });
+      paths[keys[i]].on('mouseleave', function() {
+        stage.container().style.cursor = 'default';
+      });
+
+      if (represents[keys[i]] != null) {
+        images[keys[i]] = new Image();
+        images[keys[i]].id = keys[i];
+        images[keys[i]].onload = function() {
+          console.log('iamgeLoad', this.id);
+          paths[this.id].fillPatternImage(this);
+          paths[this.id].fillPatternRepeat('no-repeat');
+          var scaleX = imageOffset[this.id].width / this.width;
+          var scaleY = imageOffset[this.id].height / this.height;
+          paths[this.id].fillPatternOffset({
+            x: (-1 * (imageOffset[this.id].x - paths[this.id].x())) / scaleX,
+            y: (-1 * (imageOffset[this.id].y - paths[this.id].y())) / scaleY
+          });
+          paths[this.id].fillPatternScale({
+            x: scaleX,
+            y: scaleY
+          });
+          console.log(paths[this.id].fillPatternScale());
+          console.log(paths[this.id].fillPatternOffset());
+          console.log(paths[this.id].fillPatternImage());
+          paths[this.id].stroke('white');
+
+          stage.draw();
+        };
+        images[keys[i]].src = represents[keys[i]];
+      }
+      layer.add(paths[keys[i]]);
+    }
+    stage.position({ x: 0, y: 0 });
+    fitStageIntoParentContainer();
+    $('#canvasScaler').val(stage.scaleX());
+    $('#canvasScaler').trigger('input');
+  }
+}
+
+function showStoryList(data, textStatus, jqXHR) {
+  console.log('showStoryList()', data, textStatus, jqXHR);
+
+  if (textStatus === 'success') {
+    var arr = data.data;
+    console.log(arr);
+  }
 }
 
 var representsSVG = Object.freeze({
@@ -189,74 +281,3 @@ var imageOffset = Object.freeze({
   jeonbuk: { x: 260.3, y: 461.2, width: 290, height: 240 },
   jeonnam: { x: 233.3, y: 606.6, width: 300, height: 270 }
 });
-
-function showMap(data, textStatus, jqXHR) {
-  console.log('showMap()', data, textStatus, jqXHR);
-
-  console.log(stage);
-  console.log(layer);
-  if (textStatus === 'success') {
-    var arr = data.data;
-    console.log(arr);
-
-    var represents = arr.represents;
-    var keys = Object.keys(represents);
-    var images = [];
-    var paths = [];
-
-    layer.destroyChildren();
-
-    for (var i = 0; i < keys.length; i++) {
-      console.log(keys[i], represents[keys[i]]);
-
-      paths[keys[i]] = new Konva.Path({
-        stroke: 'white',
-        strokeWidth: 5,
-        shadowColor: 'black',
-        shadowBlur: 5,
-        data: representsSVG[keys[i]]
-      });
-      console.log(paths[keys[i]].x(), paths[keys[i]].y());
-
-      if (keys[i] === 'jeju') {
-        paths[keys[i]].x(-85.2888);
-        paths[keys[i]].y(-997.914);
-      }
-
-      images[keys[i]] = new Image();
-      images[keys[i]].id = keys[i];
-      images[keys[i]].onload = function() {
-        console.log('iamgeLoad', this.id);
-        paths[this.id].fillPatternImage(this);
-        paths[this.id].fillPatternRepeat('no-repeat');
-        var scaleX = imageOffset[this.id].width / this.width;
-        var scaleY = imageOffset[this.id].height / this.height;
-        paths[this.id].fillPatternOffset({
-          x: (-1 * (imageOffset[this.id].x - paths[this.id].x())) / scaleX,
-          y: (-1 * (imageOffset[this.id].y - paths[this.id].y())) / scaleY
-        });
-        paths[this.id].fillPatternScale({
-          x: scaleX,
-          y: scaleY
-        });
-        console.log(paths[this.id].fillPatternScale());
-        console.log(paths[this.id].fillPatternOffset());
-        console.log(paths[this.id].fillPatternImage());
-
-        // var test = new Konva.Image({
-        //   width: imageOffset[this.id].width,
-        //   height: imageOffset[this.id].height,
-        //   opacity: 0.5,
-        //   image: this
-        // });
-        // console.log(test);
-        // layer.add(test);
-
-        stage.draw();
-      };
-      images[keys[i]].src = represents[keys[i]];
-      layer.add(paths[keys[i]]);
-    }
-    fitStageIntoParentContainer;
-  }
-}
