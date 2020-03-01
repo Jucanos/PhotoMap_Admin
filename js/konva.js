@@ -73,6 +73,19 @@ stage.on('wheel', function(e) {
   stage.batchDraw();
 });
 
+function test() {
+  Konva.Image.fromURL('/dokdo.svg', function(image) {
+    image.setAttrs({
+      width: 100,
+      height: 50,
+      x: 850,
+      y: 300
+    });
+    console.log(image);
+    layer.add(image);
+  });
+}
+
 /* 줌인/아웃 scaler 설정 */
 function scalerInit() {
   $('#canvasScaler').val(stage.scaleX());

@@ -49,7 +49,7 @@ function createLoginButton() {
         url: '/v2/user/me',
         success: function(res) {
           if (res.properties.admin == 'true') {
-            window.location.replace('/admin/');
+            window.location.replace('/admin/index.html');
           } else {
             alert('관리자페이지에 접근할 권한이 없습니다.');
           }

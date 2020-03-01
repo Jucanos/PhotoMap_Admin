@@ -130,7 +130,7 @@ function setMapList(data, textStatus, jqXHR) {
           <a class="nav-link" href="#" onclick="getMapInfo(this, \'' +
           arr[i].mid +
           '\')"; return false;">\
-            <img style="max-width:70px; width:70%" class="mb-2" src="https://s3.soybeans.tech/uploads/' +
+            <img style="max-width:70px; width:70%" class="mb-2" src="https://s3.soybeans.tech/uploads/dev/' +
           arr[i].mid +
           '/main.png" />\
             <span>' +
