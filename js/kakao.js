@@ -1,7 +1,7 @@
 // Kakao Init
 Kakao.init('7600a0cf289a958df5021746c9222d59');
 
-var server = 'https://soybeans.tech/dev';
+var server = 'https://soybeans.tech/api';
 var myInfo; // 카카오에서 가져온 내 정보
 
 function createLoginButton() {
@@ -130,7 +130,7 @@ function setMapList(data, textStatus, jqXHR) {
           <a class="nav-link" href="#" onclick="getMapInfo(this, \'' +
           arr[i].mid +
           '\')"; return false;">\
-            <img style="max-width:70px; width:70%" class="mb-2" src="https://s3.soybeans.tech/uploads/dev/' +
+            <img style="max-width:70px; width:70%" class="mb-2" src="https://s3.soybeans.tech/uploads/api/' +
           arr[i].mid +
           '/main.png" />\
             <span>' +
