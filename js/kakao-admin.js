@@ -89,6 +89,7 @@ $(function() {
       }
     } else {
       alert('로그인이 필요합니다.');
+      Kakao.Auth.logout();
       window.location.replace('/admin/login.html');
     }
   });

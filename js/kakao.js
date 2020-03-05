@@ -24,6 +24,15 @@ $(function() {
   Kakao.Auth.getStatusInfo(function(statusObj) {
     console.log(statusObj);
     if (statusObj.status == 'connected') {
+      if (statusObj.user.properties.admin == 'true') {
+        // /admin/index.html
+        $('#userInfo').prepend(
+          '<a class="dropdown-item" href="/admin/index.html">\
+          <i class="fas fa-user-lock fa-sm fa-fw mr-2 text-gray-400"></i>\
+          관리자 페이지\
+        </a>'
+        );
+      }
       // 로그인 성공
       console.log('success Login');
       myInfo = statusObj.user;
@@ -47,6 +56,7 @@ function logout() {
   window.location.replace('/login.html');
 }
 
+// 설정
 $.support.cors = true;
 $.ajaxSetup({
   beforeSend: function(xhr) {
@@ -57,6 +67,7 @@ $.ajaxSetup({
   }
 });
 
+// API
 var API = Object.freeze({
   UserGet: ['GET', '/users'],
   UserDelete: ['DELETE', '/users'],
@@ -98,6 +109,7 @@ var API = Object.freeze({
   NoticeGet: ['GET', '/notice']
 });
 
+// 추상 api
 function request(api, callback, data) {
   console.log('request', api, callback, data);
   var settings = {
@@ -111,12 +123,7 @@ function request(api, callback, data) {
   $.ajax(server + api[1], settings);
 }
 
-function userGet(data, textStatus, jqXHR) {
-  console.log('userGet()', data, textStatus, jqXHR);
-  if (textStatus == 'success') {
-  }
-}
-
+// 맵 리스트 만들기
 function setMapList(data, textStatus, jqXHR) {
   console.log('setMapList()', data, textStatus, jqXHR);
 
@@ -143,6 +150,7 @@ function setMapList(data, textStatus, jqXHR) {
   }
 }
 
+// 지도 정보 가져오기 + 지도 보여주기
 function getMapInfo(obj, mid) {
   var pobj = $(obj).parent();
   var ppobj = pobj.parent();
@@ -246,6 +254,7 @@ function showMap(data, textStatus, jqXHR) {
   }
 }
 
+// DEBUG: 스토리 리스트 보여주기
 function showStoryList(data, textStatus, jqXHR) {
   console.log('showStoryList()', data, textStatus, jqXHR);
 
@@ -256,6 +265,62 @@ function showStoryList(data, textStatus, jqXHR) {
     var storyObj = null;
     for (var i = 0; i < arr.length; i++) {
       storyObj = arr[i];
+    }
+  }
+}
+
+// 로그 리스트 가져오기
+function getNoticeList() {
+  request(API.NoticeGet, showNoticeList);
+}
+
+function showNoticeList(data, textStatus, jqXHR) {
+  console.log('showNoticeList()', data, textStatus, jqXHR);
+
+  if (textStatus === 'success') {
+    var arr = data.data;
+    console.log(arr);
+
+    for (var i = 0; i < arr.length; i++) {
+      $('#container').append(
+        '<div class="row">\
+      <div class="col-lg-12">\
+        <!-- Circle Buttons -->\
+        <div class="card shadow mb-4">\
+          <!-- Card Header - Accordion -->\
+          <a\
+            href="#collapseCardNoticeList' +
+          i +
+          '"\
+            class="d-block card-header py-3"\
+            data-toggle="collapse"\
+            role="button"\
+            aria-expanded="true"\
+            aria-controls="collapseCardNoticeList' +
+          i +
+          '"\
+          >\
+            <h6 class="m-0 font-weight-bold text-primary">\
+            ' +
+          arr[i].title +
+          '\
+            </h6>\
+          </a>\
+    \
+          <!-- Card Content - Collapse -->\
+          <div class="collapse" id="collapseCardNoticeList' +
+          i +
+          '">\
+            <div class="card-body">\
+              <pre>' +
+          arr[i].context +
+          '</pre>\
+            </div>\
+          </div>\
+        </div>\
+      </div>\
+    </div>'
+      );
     }
   }
 }
